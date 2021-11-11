@@ -41,33 +41,34 @@ class Trainer:
                                      shuffle=False, num_workers=self.args.num_workers)
         self.mean, self.std = train_set.mean, train_set.std
 
-        self.net = get_model(self.args.model_name, self.num_classes).cuda()
+        self.net = get_model(self.args.model_name, self.num_classes)
         self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr, momentum=0.9, weight_decay=5e-4)
+        self.criterion = nn.CrossEntropyLoss()
+
+        if self.args.cuda:
+            self.net, self.criterion = self.net.cuda(), self.criterion.cuda()
+
         if self.args.apex:
             self.net, self.optimizer = amp.initialize(self.net, self.optimizer, opt_level='O1')
 
-        # self.net = nn.DataParallel(self.net, self.args.gpu_ids)
-
-        self.val_criterion = nn.CrossEntropyLoss().cuda()
-        self.criterion = nn.CrossEntropyLoss()
+        if len(self.args.gpu_id) > 1:
+            self.net = nn.DataParallel(self.net, self.args.gpu_ids)
 
         if self.args.warm_up_epoch:
-            warm_up_with_cosine_lr = lambda epoch: epoch / (self.args.warm_up_epoch * 10) if epoch < self.args.warm_up_epoch \
-                else 0.5 * (math.cos((epoch - self.args.warm_up_epoch) / (self.args.epochs - self.args.warm_up_epoch) \
-                 * math.pi) + 1) / 10
+            warm_up_with_cosine_lr = lambda epoch: epoch / (self.args.warm_up_epoch * 10) \
+                if epoch < self.args.warm_up_epoch else 0.5 * (math.cos((
+                epoch - self.args.warm_up_epoch) / (self.args.epochs - self.args.warm_up_epoch) * math.pi) + 1) / 10
             self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=warm_up_with_cosine_lr)
         else:
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.args.epochs * len(self.train_loader), eta_min=1e-5)
 
-        self.Metric = namedtuple('Metric', 'pixacc miou kappa')
+        self.Metric = namedtuple('Metric', 'pixacc miou')
 
         self.train_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
-                                        miou=metrics.MeanIoU(self.num_classes),
-                                        kappa=metrics.Kappa(self.num_classes))
+                                        miou=metrics.MeanIoU(self.num_classes))
 
         self.val_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
-                                        miou=metrics.MeanIoU(self.num_classes),
-                                        kappa=metrics.Kappa(self.num_classes))
+                                        miou=metrics.MeanIoU(self.num_classes))
 
         # self.writer_acc = SummaryWriter(f'{self.args.board_dir}/acc')
         # self.writer_miou = SummaryWriter(f'{self.args.board_dir}/miou')
@@ -82,9 +83,8 @@ class Trainer:
 
     def training(self, epoch):
 
-        self.train_metric.miou.reset()
-        self.train_metric.kappa.reset()
         self.train_metric.pixacc.reset()
+        self.train_metric.miou.reset()
 
         batch_time = AverageMeter()
         losses = AverageMeter()
@@ -116,21 +116,19 @@ class Trainer:
 
             self.train_metric.pixacc.update(output, tar)
             self.train_metric.miou.update(output, tar)
-            self.train_metric.kappa.update(output, tar)
 
             batch_time.update(time.time() - starttime)
             starttime = time.time()
 
-            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f} | kappa: {kappa:.4f}'.format(
+            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f}'.format(
                 batch=idx + 1,
                 size=len(self.train_loader),
                 bt=batch_time.avg,
                 total=bar.elapsed_td,
                 eta=bar.eta_td,
                 loss=losses.avg,
-                mIoU=self.train_metric.miou.get()[0],
+                mIoU=self.train_metric.miou.get(),
                 Acc=self.train_metric.pixacc.get(),
-                kappa=self.train_metric.kappa.get()
             )
             bar.next()
         bar.finish()
@@ -145,9 +143,8 @@ class Trainer:
 
     def validation(self, epoch):
 
+        self.train_metric.pixacc.reset()
         self.val_metric.miou.reset()
-        self.val_metric.kappa.reset()
-        self.val_metric.pixacc.reset()
 
         batch_time = AverageMeter()
         losses = AverageMeter()
@@ -162,9 +159,10 @@ class Trainer:
             img, tar = sample['image'], sample['label']
             if self.args.cuda:
                 img, tar = img.cuda(), tar.cuda()
-            
-            output = self.net(img)
-            loss = self.criterion(output, tar.long())
+
+            with torch.no_grad():
+                output = self.net(img)
+                loss = self.criterion(output, tar.long())
             losses.update(loss)
 
             if idx < 5:
@@ -172,31 +170,29 @@ class Trainer:
 
             self.val_metric.pixacc.update(output, tar)
             self.val_metric.miou.update(output, tar)
-            self.val_metric.kappa.update(output, tar)
 
             batch_time.update(time.time() - starttime)
             starttime = time.time()
 
-            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f} | kappa: {kappa: .4f}'.format(
+            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f}'.format(
                 batch=idx + 1,
                 size=len(self.val_loader),
                 bt=batch_time.avg,
                 total=bar.elapsed_td,
                 eta=bar.eta_td,
                 loss=losses.avg,
-                mIoU=self.val_metric.miou.get()[0],
+                mIoU=self.val_metric.miou.get(),
                 Acc=self.val_metric.pixacc.get(),
-                kappa=self.val_metric.kappa.get()
             )
             bar.next()
         bar.finish()
 
         print(f'Validation:[Epoch: {epoch}, numImages: {num_val * self.args.vd_batch_size}]')
         print(f'Valid Loss: {losses.avg:.4f}')
-        if self.val_metric.miou.get()[0] > self.best_miou:
+        if self.val_metric.miou.get() > self.best_miou:
             if  self.val_metric.pixacc.get() > self.best_pred:
                 self.best_pred = self.val_metric.pixacc.get()
-            self.best_miou = self.val_metric.miou.get()[0]
+            self.best_miou = self.val_metric.miou.get()
 
             save_model(self.net, self.args.model_name, self.best_pred, self.best_miou)
         print("-----best acc:{:.4f}, best miou:{:.4f}-----".format(self.best_pred, self.best_miou))
@@ -211,7 +207,6 @@ class Trainer:
         #     self.writer_miou.close()
         #     self.writer_kappa.close()
         # return self.val_metric.pixacc.get()
-
 
     def get_lr(self):
         return self.optimizer.param_groups[0]['lr']
@@ -230,21 +225,26 @@ class Trainer:
         target = target.cpu().numpy()
 
         # output (B,C,H,W) to (B,H,W)
-        output = torch.argmax(output, dim=1).cpu().numpy()
+        output = torch.argmax(output, dim=1).cpu().detach().numpy()
 
         for i in range(min(3, image_np.shape[0])):
             img_tmp = image_np[i]
             img_rgb_tmp = np.array(Image.fromarray(img_tmp).convert("RGB")).astype(np.uint8)
-            target_rgb_tmp = decode_segmap(target[i]).astype(np.uint8)
-            output_rgb_tmp = decode_segmap(output[i]).astype(np.uint8)
+
+            target_tmp = np.zeros(target[i].shape)
+            target_tmp[target[i] == 1] = 255
+
+            output_tmp = np.zeros(output[i].shape)
+            output_tmp[output[i] == 1] = 255
+
             plt.figure()
             plt.title('display')
-            plt.subplot(141)
+            plt.subplot(131)
             plt.imshow(img_rgb_tmp, vmin=0, vmax=255)
-            plt.subplot(142)
-            plt.imshow(target_rgb_tmp, vmin=0, vmax=255)
-            plt.subplot(143)
-            plt.imshow(output_rgb_tmp, vmin=0, vmax=255)
+            plt.subplot(132)
+            plt.imshow(target_tmp, vmin=0, vmax=255)
+            plt.subplot(133)
+            plt.imshow(output_tmp, vmin=0, vmax=255)
 
             save_path = os.path.join(self.args.vis_image_dir, f'epoch_{epoch}')
             make_sure_path_exists(save_path)

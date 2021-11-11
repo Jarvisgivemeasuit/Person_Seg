@@ -2,23 +2,19 @@ import torch
 import numpy as np
 from sklearn.metrics import f1_score as fs
 
+
 class PixelAccuracy:
-    def __init__(self, ignore_index=-1, eps=1e-7):
+    def __init__(self, eps=1e-7):
         self.num_correct = 0
         self.num_instance = 0
-        self.ignore_index = ignore_index
         self.eps = eps
 
     def update(self, pred, target):
-        ignore_mask = target != self.ignore_index
-        if pred.size(1) == 1:
-            pred = torch.sigmoid(pred)
-            pred = pred > 0.5
-        else:
-            pred = torch.argmax(pred, dim=1)
+        pred = torch.argmax(pred, dim=1)
 
-        self.num_correct += ((pred.long() == target.long()) * ignore_mask).sum().item()
-        self.num_instance += ignore_mask.sum().item()
+        self.num_correct += (pred.long() & target.long()).sum().item()
+        # print('\t', (pred.long() & target.long()).sum().item(), pred.sum(), target.sum())
+        self.num_instance += target.sum().item()
 
     def get(self):
         return self.num_correct / (self.num_instance + self.eps)
@@ -29,44 +25,31 @@ class PixelAccuracy:
 
 
 class MeanIoU:
-    def __init__(self, num_classes, eps=1e-7):
-        if num_classes == 1:
-            self.num_classes = num_classes + 1
-        else:
-            self.num_classes = num_classes
-        self.num_intersection = np.zeros(self.num_classes)
-        self.num_union = np.zeros(self.num_classes)
+    def __init__(self, eps=1e-7):
+        self.num_intersection = 0
+        self.num_union = 0
         self.eps = eps
 
     def update(self, pred, target):
-        if pred.size(1) == 1:
-            pred = torch.sigmoid(pred)
-            pred = pred > 0.5
-        else:
-            pred = torch.argmax(pred, dim=1)
+        pred = torch.argmax(pred, dim=1)
 
-        for cur_cls in range(self.num_classes):
-            pred_mask = (pred == cur_cls).byte()
-            target_mask = (target == cur_cls).byte()
+        pred_mask = (pred == 1).byte()
+        target_mask = (target == 1).byte()
 
-            intersection = (pred_mask & target_mask).float().sum()
-            union = (pred_mask | target_mask).float().sum()
+        intersection = (pred_mask & target_mask).float().sum()
+        union = (pred_mask | target_mask).float().sum()
 
-            self.num_intersection[cur_cls] += intersection.item()
-            self.num_union[cur_cls] += union.item()
+        self.num_intersection += intersection.item()
+        self.num_union += union.item()
 
-    def get(self, ignore_background=False):
-        if ignore_background:
-            iou_list = (self.num_intersection[:-1] / (self.num_union[:-1] + self.eps))
-            return iou_list.mean(), iou_list.max(), np.where(iou_list == iou_list.max()), iou_list.min(), np.where(iou_list == iou_list.min())
-        else:
-            iou_list = (self.num_intersection / (self.num_union + self.eps))
-            return iou_list.mean(), iou_list.max(), np.where(iou_list == iou_list.max()), iou_list.min(), np.where(iou_list == iou_list.min())
+    def get(self):
+        iou_list = self.num_intersection / (self.num_union + self.eps)
+        return iou_list
 
     def reset(self):
-        self.num_intersection = np.zeros(self.num_classes)
-        self.num_union = np.zeros(self.num_classes)
-    
+        self.num_intersection = 0
+        self.num_union = 0
+
     def get_all(self):
         return (self.num_intersection / (self.num_union + self.eps))
 
@@ -81,12 +64,11 @@ class Kappa:
     def update(self, output, target):
         pre_array = torch.argmax(output, dim=1)
 
-        for i in range(self.num):
-            pre_mask = (pre_array == i).byte()
-            tar_mask = (target == i).byte()
-            self.cor_vec[i] = (pre_mask & tar_mask).sum().item()
-            self.pre_vec[i] = pre_mask.sum().item()
-            self.tar_vec[i] = tar_mask.sum().item()
+        pre_mask = (pre_array == 1).byte()
+        tar_mask = (target == 1).byte()
+        self.cor_vec[0] = (pre_mask & tar_mask).sum().item()
+        self.pre_vec[0] = pre_mask.sum().item()
+        self.tar_vec[0] = tar_mask.sum().item()
 
     def get(self):
         assert len(self.pre_vec) == len(self.tar_vec) == len(self.pre_vec)
@@ -115,8 +97,7 @@ class F1:
     def update(self, output, target):
         output = torch.argmax(output, dim=1).reshape(-1).cpu() 
         target = target.reshape(-1).cpu()
-        # output = list(output)
-        # target = list(target)
+
         self.score += fs(output, target, average='macro')
         self.num += 1
         if self.map == None:

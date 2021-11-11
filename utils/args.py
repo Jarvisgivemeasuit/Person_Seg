@@ -1,19 +1,20 @@
 import torch
 import os
-class Args:
 
+
+class Args:
     def __init__(self):
         self.tr_batch_size = 64
         self.vd_batch_size = 64
 
-        self.num_workers = 4
+        self.num_workers = 8
         self.inplanes = 3
 
         self.model_name = 'pspnet'
         self.epochs = 100
 
         self.lr = 0.01
-        self.warm_up_epoch = 5
+        self.warm_up_epoch = 0
         self.no_val = False
 
         self.gpu_ids = [0, 1, 2, 3]
@@ -23,4 +24,4 @@ class Args:
         self.apex = True
 
         self.vis_image_dir = '/home/lijl/Documents/Person_Seg/vis_image/'
-        # self.board_dir = 'pspnet_dpa'
+        # self.board_dir = 'pspnet'

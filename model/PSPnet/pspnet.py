@@ -4,7 +4,7 @@ from torchsummary import summary
 import torch.nn.functional as F
 from thop import profile
 
-from .mobilenet_v3 import mobilenet_v3_small
+from model.PSPnet.mobilenet_v3 import mobilenet_v3_small
 
 
 NUM_CLASSES = 2
@@ -85,10 +85,10 @@ class PSPNet(nn.Module):
         out_channels = self.backbone[-1][0].out_channels
         self.ppm = PPM(out_channels)
         self.ppm_conv = nn.Sequential(
-            Double_conv(out_channels * 2, num_classes),
-            # nn.Dropout(p=0.1),
+            Double_conv(out_channels * 2, 64),
+            nn.Dropout(p=0.1),
         )
-        self.out_conv = nn.Conv2d(num_classes, num_classes, 3, padding=1, bias=True)
+        self.out_conv = nn.Conv2d(64, num_classes, 3, padding=1, bias=True)
 
     def forward(self, x):
         size = (x.shape[2], x.shape[3])
@@ -97,11 +97,12 @@ class PSPNet(nn.Module):
         x = self.ppm(x)
         x = self.ppm_conv(x)
 
-        out = F.interpolate(x,
+        x = F.interpolate(x,
                             size=size,
                             mode='bilinear',
                             align_corners=True)
 
+        out = self.out_conv(x)
         return out
 
     def freeze_backbone(self):
@@ -119,7 +120,5 @@ class PSPNet(nn.Module):
             param.requires_grad = True
 
 
-if __name__ == '__main__':
-    backbone = mobilenet_v3_small().cuda().features
-    net = PSPNet(2, backbone).cuda()
-    summary(net.cuda(), (3, 256, 256))
+# net = PSPNet(2).cuda()
+# summary(net.cuda(), (3, 256, 256))

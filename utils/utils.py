@@ -63,26 +63,6 @@ class SoftCrossEntropyLoss(nn.Module):
             return self.times * (self.weight * loss).sum() / (mask.sum() + self.eps)
 
 
-def decode_segmap(label_mask):
-    """Decode segmentation class labels into a color image
-        :param label_mask:
-        :param label_number:
-    """
-    color_list = np.array([[0, 0, 0], [255, 255, 255]])
-    r = label_mask.copy()
-    g = label_mask.copy()
-    b = label_mask.copy()
-    for ll in range(0, len(color_list)):
-        r[label_mask == ll] = color_list[ll, 0]
-        g[label_mask == ll] = color_list[ll, 1]
-        b[label_mask == ll] = color_list[ll, 2]
-    rgb = np.zeros((label_mask.shape[0], label_mask.shape[1], 3))
-    rgb[:, :, 0] = r
-    rgb[:, :, 1] = g
-    rgb[:, :, 2] = b
-    return rgb.astype(np.uint8)
-
-
 class Circumference(nn.Module):
     '''计算mask中所有种类的平均周长'''
     def __init__(self):
