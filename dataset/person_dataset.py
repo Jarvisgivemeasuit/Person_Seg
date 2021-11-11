@@ -22,9 +22,13 @@ class PersonSeg(Dataset):
         self.mean = mean
         self.std = std
 
-        self._image_dir = os.path.join(base_dir, mode, 'Images')
-        self._label_dir = os.path.join(base_dir, mode, 'Masks')
-        self._data_list = os.listdir(self._image_dir)
+        self.jpg_image_dir = os.path.join(base_dir, mode, 'Images')
+        self.jpg_label_dir = os.path.join(base_dir, mode, 'Masks')
+
+        self.array_image_dir = os.path.join(base_dir, mode, 'Images_np')
+        self.array_label_dir = os.path.join(base_dir, mode, 'Masks_np')
+
+        self._data_list = os.listdir(self.jpg_image_dir)
 
         for data in self._data_list:
             if data[-3:] != 'jpg':
@@ -36,12 +40,32 @@ class PersonSeg(Dataset):
     def __getitem__(self, idx):
         return self.load_sample(idx)
 
-    def load_sample(self, idx):
-        image = cv2.imread(os.path.join(self._image_dir, self._data_list[idx]))
-        mask = cv2.imread(os.path.join(self._label_dir, self._data_list[idx]), -1)
+    def load_img_sample(self, idx):
+        image = cv2.imread(os.path.join(self.jpg_image_dir, self._data_list[idx]))
+        mask = cv2.imread(os.path.join(self.jpg_label_dir, self._data_list[idx]), -1)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        mask[mask > 0] = 1 
+        mask[mask > 0] = 1
+        mask = mask.astype(np.float)
+
+        sample = {'image': image, 'label': mask}
+        if self.mode == 'train':
+            sample = self._train_enhance(sample)
+        else:
+            sample = self._test_enhance(sample)
+
+        sample['image'] = sample['image'].transpose((2, 0, 1))
+        sample['file'] = self._data_list[idx]
+
+        return sample
+
+    def load_array_sample(self, idx):
+        image = np.load(os.path.join(self.array_image_dir, self._data_list[idx]))
+        mask = np.load(os.path.join(self.array_label_dir, self._data_list[idx]))
+
+        mask[mask > 0] = 1
+        mask = mask.astype(np.float)
+
         sample = {'image': image, 'label': mask}
         if self.mode == 'train':
             sample = self._train_enhance(sample)
@@ -62,7 +86,7 @@ class PersonSeg(Dataset):
             A.Transpose(p=0.5),
             A.ElasticTransform(p=0.5),
             A.Blur(p=0.5),
-            A.Cutout(p=0.5),
+            A.CoarseDropout(p=0.5),
 
             A.Normalize(mean=self.mean, std=self.std, p=1),
         ], additional_targets={'image': 'image', 'label': 'mask'})
