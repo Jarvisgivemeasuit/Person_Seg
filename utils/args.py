@@ -15,6 +15,7 @@ class Args:
 
         self.lr = 0.01
         self.warm_up_epoch = 0
+        self.weight_decay = 5e-5
         self.no_val = False
 
         self.gpu_ids = [0, 1, 2, 3]

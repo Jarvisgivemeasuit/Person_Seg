@@ -39,6 +39,19 @@ class AverageMeter:
         self.avg = self.sum / self.count
 
 
+def split_params(net):
+    decay, no_decay = [], []
+    
+    for stage in net.modules():
+        for m in stage.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                no_decay.append(m.bias)
+                decay.append(m.weight)
+            else:
+                decay.extend([*m.parameters()])
+    return decay, no_decay
+
+
 class SoftCrossEntropyLoss(nn.Module):
 
     def __init__(self, ignore_index=-1, times=1, eps=1e-7, weight=None):
@@ -126,24 +139,5 @@ class FocalLoss(nn.Module):
 
 
 if __name__ == '__main__':
-    # path = '/home/arron/dataset/rssrai_grey/rssrai/train/img'
-    # path = '/home/arron/dataset/rssrai_grey/increase/rssrai/test'
-    # save_path = '/home/arron/dataset/rssrai_grey/results/dt_resunet-resnet50' 
-    # res_path = '/home/arron/dataset/rssrai_grey/results/tmp_output/dt_resunet-resnet50'
-
-    path = '/home/mist/rssrai/ori_img/val/img'
-    save_path = '/home/mist/results/unet-resnet50' 
-    res_path = '/home/mist/results/tmp'
-    supermerger = SuperMerger(path, res_path, save_path)
-    supermerger.merge_image()
-
-
-    # lists = os.listdir(res_path)
-    # i = 0
-    # for files in lists:
-    #     if '_'.join(files.split('_')[:-2]) == 'GF2_PMS1__20160623_L1A0001660727-MSS1':
-    #         print(files)
-    #         i += 1
-    # print(i)
-    # print(len(lists))
+    pass
     

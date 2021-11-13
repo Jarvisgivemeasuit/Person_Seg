@@ -1,14 +1,31 @@
+import os
 import torch
 import torch.nn as nn
 from torchsummary import summary
 import torch.nn.functional as F
 from thop import profile
 
-from model.PSPnet.mobilenet_v3 import mobilenet_v3_small
+from model.PSPnet.mobilenet_v3 import *
+# from mobilenet_v3 import *
 
 
 NUM_CLASSES = 2
 
+
+class MobileNetV3(nn.Module):
+    def __init__(self, depth='small'):
+        super().__init__()
+
+        assert depth in ['large', 'small']
+        self.model = mobilenet_v3_small(pretrained=True) if depth == 'small' else mobilenet_v3_large(pretrained=False)
+
+        for m in self.model.features[4:].modules():
+            if isinstance(m, nn.Conv2d):
+                m.stride = 1
+
+    def forward(self, x):
+        out = self.model(x)
+        return out
 
 class PPM(nn.Module):
     def __init__(self, inplanes):
@@ -81,14 +98,20 @@ class Double_conv(nn.Module):
 class PSPNet(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
-        self.backbone = mobilenet_v3_small(pretrained=True).cuda().features
-        out_channels = self.backbone[-1][0].out_channels
+        self.backbone = mobilenet_v3_small(pretrained=True).features
+        for m in self.backbone[4:].modules():
+            if isinstance(m, nn.Conv2d):
+                m.stride = 1
+
+        out_channels = self.backbone[-1].out_channels
         self.ppm = PPM(out_channels)
         self.ppm_conv = nn.Sequential(
-            Double_conv(out_channels * 2, 64),
+            Double_conv(out_channels * 2, num_classes),
             nn.Dropout(p=0.1),
         )
-        self.out_conv = nn.Conv2d(64, num_classes, 3, padding=1, bias=True)
+
+        self.out_conv = nn.Conv2d(num_classes, num_classes, 3, padding=1, bias=True)
+        self.out_conv.bias.data.zero_() - 20
 
     def forward(self, x):
         size = (x.shape[2], x.shape[3])
@@ -119,6 +142,6 @@ class PSPNet(nn.Module):
         for param in self.backbone.parameters():
             param.requires_grad = True
 
-
+# os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 # net = PSPNet(2).cuda()
 # summary(net.cuda(), (3, 256, 256))

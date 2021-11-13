@@ -29,10 +29,8 @@ class Trainer:
     def __init__(self, Args):
         self.num_classes = PersonSeg.NUM_CLASSES
         self.args = Args
-        self.start_epoch = 1
-        self.epochs = self.args.epochs
-        self.best_pred = 0
-        self.best_miou = 0
+        self.start_epoch, self.epochs = 1, self.args.epochs
+        self.best_pred, self.best_iou = 0, 0
 
         train_set, val_set = PersonSeg('train'), PersonSeg('val')
         self.train_loader = DataLoader(train_set, batch_size=self.args.tr_batch_size,
@@ -42,7 +40,11 @@ class Trainer:
         self.mean, self.std = train_set.mean, train_set.std
 
         self.net = get_model(self.args.model_name, self.num_classes)
-        self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr, momentum=0.9, weight_decay=5e-4)
+
+        params = split_params(self.net)
+
+        self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
+                                         momentum=0.9, weight_decay=self.args.weight_decay)
         self.criterion = nn.CrossEntropyLoss()
 
         if self.args.cuda:
@@ -62,13 +64,13 @@ class Trainer:
         else:
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.args.epochs * len(self.train_loader), eta_min=1e-5)
 
-        self.Metric = namedtuple('Metric', 'pixacc miou')
+        self.Metric = namedtuple('Metric', 'pixacc iou')
 
         self.train_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
-                                        miou=metrics.MeanIoU(self.num_classes))
+                                        iou=metrics.IoU(self.num_classes))
 
         self.val_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
-                                        miou=metrics.MeanIoU(self.num_classes))
+                                        iou=metrics.IoU(self.num_classes))
 
         # self.writer_acc = SummaryWriter(f'{self.args.board_dir}/acc')
         # self.writer_miou = SummaryWriter(f'{self.args.board_dir}/miou')
@@ -84,7 +86,7 @@ class Trainer:
     def training(self, epoch):
 
         self.train_metric.pixacc.reset()
-        self.train_metric.miou.reset()
+        self.train_metric.iou.reset()
 
         batch_time = AverageMeter()
         losses = AverageMeter()
@@ -115,19 +117,19 @@ class Trainer:
             self.scheduler.step()
 
             self.train_metric.pixacc.update(output, tar)
-            self.train_metric.miou.update(output, tar)
+            self.train_metric.iou.update(output, tar)
 
             batch_time.update(time.time() - starttime)
             starttime = time.time()
 
-            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f}'.format(
+            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | IoU:{IoU:.4f}'.format(
                 batch=idx + 1,
                 size=len(self.train_loader),
                 bt=batch_time.avg,
                 total=bar.elapsed_td,
                 eta=bar.eta_td,
                 loss=losses.avg,
-                mIoU=self.train_metric.miou.get(),
+                IoU=self.train_metric.iou.get(),
                 Acc=self.train_metric.pixacc.get(),
             )
             bar.next()
@@ -144,7 +146,7 @@ class Trainer:
     def validation(self, epoch):
 
         self.train_metric.pixacc.reset()
-        self.val_metric.miou.reset()
+        self.val_metric.iou.reset()
 
         batch_time = AverageMeter()
         losses = AverageMeter()
@@ -169,19 +171,19 @@ class Trainer:
                 self.visualize_batch_image(img, tar, output, epoch, idx)
 
             self.val_metric.pixacc.update(output, tar)
-            self.val_metric.miou.update(output, tar)
+            self.val_metric.iou.update(output, tar)
 
             batch_time.update(time.time() - starttime)
             starttime = time.time()
 
-            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | mIoU:{mIoU:.4f}'.format(
+            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | IoU:{IoU:.4f}'.format(
                 batch=idx + 1,
                 size=len(self.val_loader),
                 bt=batch_time.avg,
                 total=bar.elapsed_td,
                 eta=bar.eta_td,
                 loss=losses.avg,
-                mIoU=self.val_metric.miou.get(),
+                IoU=self.val_metric.iou.get(),
                 Acc=self.val_metric.pixacc.get(),
             )
             bar.next()
@@ -189,13 +191,13 @@ class Trainer:
 
         print(f'Validation:[Epoch: {epoch}, numImages: {num_val * self.args.vd_batch_size}]')
         print(f'Valid Loss: {losses.avg:.4f}')
-        if self.val_metric.miou.get() > self.best_miou:
+        if self.val_metric.iou.get() > self.best_iou:
             if  self.val_metric.pixacc.get() > self.best_pred:
                 self.best_pred = self.val_metric.pixacc.get()
-            self.best_miou = self.val_metric.miou.get()
+            self.best_iou = self.val_metric.iou.get()
 
-            save_model(self.net, self.args.model_name, self.best_pred, self.best_miou)
-        print("-----best acc:{:.4f}, best miou:{:.4f}-----".format(self.best_pred, self.best_miou))
+            save_model(self.net, self.args.model_name, self.best_pred, self.best_iou)
+        print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
 
         # self.writer_acc.add_scalar('val', self.val_metric.pixacc.get(), epoch)
         # self.writer_miou.add_scalar('val', self.val_metric.miou.get()[0], epoch)

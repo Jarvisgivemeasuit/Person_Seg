@@ -28,21 +28,22 @@ class PersonSeg(Dataset):
         self.array_image_dir = os.path.join(base_dir, mode, 'Images_np')
         self.array_label_dir = os.path.join(base_dir, mode, 'Masks_np')
 
-        self._data_list = os.listdir(self.jpg_image_dir)
+        self.jpg_data_list = os.listdir(self.jpg_image_dir)
+        self.array_data_list = os.listdir(self.array_image_dir)
 
-        for data in self._data_list:
+        for data in self.jpg_data_list:
             if data[-3:] != 'jpg':
                 self._data_list.remove(data)
 
     def __len__(self):
-        return len(self._data_list)
+        return len(self.jpg_data_list)
 
     def __getitem__(self, idx):
-        return self.load_sample(idx)
+        return self.load_jpg_sample(idx)
 
-    def load_img_sample(self, idx):
-        image = cv2.imread(os.path.join(self.jpg_image_dir, self._data_list[idx]))
-        mask = cv2.imread(os.path.join(self.jpg_label_dir, self._data_list[idx]), -1)
+    def load_jpg_sample(self, idx):
+        image = cv2.imread(os.path.join(self.jpg_image_dir, self.jpg_data_list[idx]))
+        mask = cv2.imread(os.path.join(self.jpg_label_dir, self.jpg_data_list[idx]), -1)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         mask[mask > 0] = 1
@@ -55,13 +56,13 @@ class PersonSeg(Dataset):
             sample = self._test_enhance(sample)
 
         sample['image'] = sample['image'].transpose((2, 0, 1))
-        sample['file'] = self._data_list[idx]
+        sample['file'] = self.jpg_data_list[idx]
 
         return sample
 
     def load_array_sample(self, idx):
-        image = np.load(os.path.join(self.array_image_dir, self._data_list[idx]))
-        mask = np.load(os.path.join(self.array_label_dir, self._data_list[idx]))
+        image = np.load(os.path.join(self.array_image_dir, self.array_data_list[idx]))
+        mask = np.load(os.path.join(self.array_label_dir, self.array_data_list[idx]))[:, :, -1]
 
         mask[mask > 0] = 1
         mask = mask.astype(np.float)
@@ -73,20 +74,22 @@ class PersonSeg(Dataset):
             sample = self._test_enhance(sample)
 
         sample['image'] = sample['image'].transpose((2, 0, 1))
-        sample['file'] = self._data_list[idx]
+        sample['file'] = self.array_data_list[idx]
 
         return sample
 
     def _train_enhance(self, sample):
         compose = A.Compose([
-            A.Resize(256, 256, p=1),
             A.HorizontalFlip(p=0.5),
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
-            A.Transpose(p=0.5),
-            A.ElasticTransform(p=0.5),
-            A.Blur(p=0.5),
-            A.CoarseDropout(p=0.5),
+            A.Blur(blur_limit=11, p=0.5),
+            A.GaussNoise(p=0.5),
+            A.RandomBrightnessContrast(p=1),
+            A.CLAHE(p=1),
+
+            A.Resize(500, 500, p=1),
+            A.RandomSizedCrop((300, 500), 256, 256, p=1),
 
             A.Normalize(mean=self.mean, std=self.std, p=1),
         ], additional_targets={'image': 'image', 'label': 'mask'})
@@ -94,6 +97,8 @@ class PersonSeg(Dataset):
 
     def _test_enhance(self, sample):
         norm = A.Compose([
+            A.CLAHE(p=1),
+
             A.Resize(256, 256, p=1),
             A.Normalize(mean=self.mean, std=self.std, p=1)],
             additional_targets={'image': 'image', 'label': 'mask'})

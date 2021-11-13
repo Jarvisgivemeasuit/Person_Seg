@@ -12,9 +12,10 @@ class PixelAccuracy:
     def update(self, pred, target):
         pred = torch.argmax(pred, dim=1)
 
-        self.num_correct += (pred.long() & target.long()).sum().item()
-        # print('\t', (pred.long() & target.long()).sum().item(), pred.sum(), target.sum())
-        self.num_instance += target.sum().item()
+        # self.num_correct += (pred.long() & target.long()).sum().item()
+        # self.num_instance += target.sum().item()
+        self.num_correct += (1 - pred.long() ^ target.long()).sum().item()
+        self.num_instance += target.numel()
 
     def get(self):
         return self.num_correct / (self.num_instance + self.eps)
@@ -24,7 +25,7 @@ class PixelAccuracy:
         self.num_instance = 0
 
 
-class MeanIoU:
+class IoU:
     def __init__(self, eps=1e-7):
         self.num_intersection = 0
         self.num_union = 0
