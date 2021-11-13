@@ -40,9 +40,7 @@ class Trainer:
         self.mean, self.std = train_set.mean, train_set.std
 
         self.net = get_model(self.args.model_name, self.num_classes)
-
         params = split_params(self.net)
-
         self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
                                          momentum=0.9, weight_decay=self.args.weight_decay)
         self.criterion = nn.CrossEntropyLoss()
@@ -56,32 +54,24 @@ class Trainer:
         if len(self.args.gpu_id) > 1:
             self.net = nn.DataParallel(self.net, self.args.gpu_ids)
 
-        if self.args.warm_up_epoch:
-            warm_up_with_cosine_lr = lambda epoch: epoch / (self.args.warm_up_epoch * 10) \
-                if epoch < self.args.warm_up_epoch else 0.5 * (math.cos((
-                epoch - self.args.warm_up_epoch) / (self.args.epochs - self.args.warm_up_epoch) * math.pi) + 1) / 10
+        if self.args.reset_times:
+            self.lr = lambda iters: self.args.get_lr(reset_time=self.args.epochs, 
+                                                     epochs=self.args.epochs, 
+                                                     iterations=len(self.train_loader), 
+                                                     iters=iters, 
+                                                     lr_init=self.args.lr,
+                                                     lr_min=self.args.lr_min, 
+                                                     warm_up_epoch=self.args.warm_up_epoch)
+
             self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=warm_up_with_cosine_lr)
         else:
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.args.epochs * len(self.train_loader), eta_min=1e-5)
 
         self.Metric = namedtuple('Metric', 'pixacc iou')
-
         self.train_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
                                         iou=metrics.IoU(self.num_classes))
-
         self.val_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
                                         iou=metrics.IoU(self.num_classes))
-
-        # self.writer_acc = SummaryWriter(f'{self.args.board_dir}/acc')
-        # self.writer_miou = SummaryWriter(f'{self.args.board_dir}/miou')
-        # self.writer_kappa = SummaryWriter(f'{self.args.board_dir}/kappa')
-
-        # self.writer_acc.add_scalar('train', self.train_metric.pixacc.get(), 0)
-        # self.writer_miou.add_scalar('train', self.train_metric.miou.get()[0], 0)
-        # self.writer_kappa.add_scalar('train', self.train_metric.kappa.get(), 0)
-        # self.writer_acc.add_scalar('val', self.val_metric.pixacc.get(), 0)
-        # self.writer_miou.add_scalar('val', self.val_metric.miou.get()[0], 0)
-        # self.writer_kappa.add_scalar('val', self.val_metric.kappa.get(), 0)
 
     def training(self, epoch):
 
@@ -136,12 +126,6 @@ class Trainer:
         bar.finish()
         print('[Epoch: %d, numImages: %5d]' % (epoch, num_train * self.args.tr_batch_size))
         print('Train Loss: %.3f' % losses.avg)
-
-        # self.writer_acc.add_scalar('train', self.train_metric.pixacc.get(), epoch)
-        # self.writer_miou.add_scalar('train', self.train_metric.miou.get()[0], epoch)
-        # self.writer_kappa.add_scalar('train', self.train_metric.kappa.get(), epoch)
-        # self.writer_acc.add_scalar('train/train_loss', losses.avg, epoch)
-        # self.writer_acc.add_scalar('train/train_lr', self.get_lr(), epoch)
 
     def validation(self, epoch):
 
@@ -198,17 +182,6 @@ class Trainer:
 
             save_model(self.net, self.args.model_name, self.best_pred, self.best_iou)
         print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
-
-        # self.writer_acc.add_scalar('val', self.val_metric.pixacc.get(), epoch)
-        # self.writer_miou.add_scalar('val', self.val_metric.miou.get()[0], epoch)
-        # self.writer_kappa.add_scalar('val', self.val_metric.kappa.get(), epoch)
-        # self.writer_acc.add_scalar('val/val_loss', losses.avg, epoch)
-
-        # if epoch == self.args.epochs:
-        #     self.writer_acc.close()
-        #     self.writer_miou.close()
-        #     self.writer_kappa.close()
-        # return self.val_metric.pixacc.get()
 
     def get_lr(self):
         return self.optimizer.param_groups[0]['lr']

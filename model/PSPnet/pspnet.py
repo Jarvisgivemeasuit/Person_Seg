@@ -142,6 +142,7 @@ class PSPNet(nn.Module):
         for param in self.backbone.parameters():
             param.requires_grad = True
 
+
 # os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 # net = PSPNet(2).cuda()
 # summary(net.cuda(), (3, 256, 256))
