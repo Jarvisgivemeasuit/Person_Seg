@@ -1,5 +1,6 @@
 import torch
 import os
+import math
 
 
 class Args:
@@ -22,7 +23,7 @@ class Args:
         self.no_val = False
 
         self.gpu_ids = [0, 1, 2, 3]
-        self.gpu_id = '1'
+        self.gpu_id = '2'
         os.environ['CUDA_VISIBLE_DEVICES'] = self.gpu_id
         self.cuda = torch.cuda.is_available()
         self.apex = True

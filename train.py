@@ -40,8 +40,10 @@ class Trainer:
         self.mean, self.std = train_set.mean, train_set.std
 
         self.net = get_model(self.args.model_name, self.num_classes)
-        params = split_params(self.net)
-        self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
+        # params, _ = split_params(self.net)
+        # self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
+        #                                  momentum=0.9, weight_decay=self.args.weight_decay)
+        self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr,
                                          momentum=0.9, weight_decay=self.args.weight_decay)
         self.criterion = nn.CrossEntropyLoss()
 
@@ -55,7 +57,7 @@ class Trainer:
             self.net = nn.DataParallel(self.net, self.args.gpu_ids)
 
         if self.args.reset_times:
-            self.lr = lambda iters: self.args.get_lr(reset_time=self.args.epochs, 
+            self.lr = lambda iters: self.args.get_lr(reset_times=self.args.reset_times, 
                                                      epochs=self.args.epochs, 
                                                      iterations=len(self.train_loader), 
                                                      iters=iters, 
@@ -63,7 +65,7 @@ class Trainer:
                                                      lr_min=self.args.lr_min, 
                                                      warm_up_epoch=self.args.warm_up_epoch)
 
-            self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=warm_up_with_cosine_lr)
+            self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=self.lr)
         else:
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.args.epochs * len(self.train_loader), eta_min=1e-5)
 
@@ -180,7 +182,7 @@ class Trainer:
                 self.best_pred = self.val_metric.pixacc.get()
             self.best_iou = self.val_metric.iou.get()
 
-            save_model(self.net, self.args.model_name, self.best_pred, self.best_iou)
+            save_model(self.net, epoch, self.best_pred, self.best_iou)
         print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
 
     def get_lr(self):
