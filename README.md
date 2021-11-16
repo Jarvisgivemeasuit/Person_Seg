@@ -10,19 +10,12 @@
     coco_person
 
     ├── test
-
     │   └── Images
-
     ├── train
-
     │   ├── Images
-
     │   └── Masks
-
     └── val
-
         ├── Images
-        
         └── Masks
 
 - person_dataset.py
