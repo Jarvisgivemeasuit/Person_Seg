@@ -11,7 +11,6 @@ std = [0.28203478, 0.27698355, 0.29013959]
 NUM_CLASSES = 2
 
 
-# 统计类别数量占比
 def statistic(data_path):
     '''
     Statistics on the percentage of the number of all categories.
@@ -32,7 +31,6 @@ def statistic(data_path):
     return res
 
 
-#  计算所有图片像素的均值并调用std
 def mean_std(path):
     '''
     Calculating the mean and standard deviation of a given dataset.
@@ -60,7 +58,6 @@ def mean_std(path):
     return value_mean, value_std
 
 
-# 计算所有图片的标准差
 def _std(path, img_list, mean, pixels_num):
     '''
     Calculating the standard deviation of a given dataset.
