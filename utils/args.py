@@ -12,13 +12,13 @@ class Args:
         self.inplanes = 3
 
         self.model_name = 'pspnet'
-        self.epochs = 100
+        self.epochs = 103
 
         self.lr = 0.01
         self.lr_min = 1e-5
-        self.reset_times = 5
+        self.reset_times = 4
         
-        self.warm_up_epoch = 0
+        self.warm_up_epoch = 3
         self.weight_decay = 5e-5
         self.no_val = False
 
@@ -39,4 +39,4 @@ class Args:
             lr_lessen = int((epochs - warm_up_epoch) / reset_times * iterations)
             lr = 0.5 * ((math.cos((iters - warm_step) % lr_lessen / lr_lessen * math.pi)) + 1) * lr_gap  + lr_min
         
-        return lr
+        return lr * 100

@@ -113,8 +113,9 @@ class Trainer:
 
             batch_time.update(time.time() - starttime)
             starttime = time.time()
+            # print([group['lr'] for group in self.optimizer.param_groups])
 
-            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | IoU:{IoU:.4f}'.format(
+            bar.suffix = '({batch}/{size}) Batch:{bt:.3f}s | Total:{total:} | ETA:{eta:} | Loss:{loss:.4f} | Acc:{Acc:.4f} | IoU:{IoU:.4f} | LR:{lr:.5f}'.format(
                 batch=idx + 1,
                 size=len(self.train_loader),
                 bt=batch_time.avg,
@@ -123,6 +124,7 @@ class Trainer:
                 loss=losses.avg,
                 IoU=self.train_metric.iou.get(),
                 Acc=self.train_metric.pixacc.get(),
+                lr=self.get_lr()
             )
             bar.next()
         bar.finish()

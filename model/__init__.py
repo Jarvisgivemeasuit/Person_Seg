@@ -11,7 +11,7 @@ def get_model(model_name, num_classes):
 
 
 def save_model(model, epoch, pred, miou):
-    save_path = f'/home/lijl/Documents/Person_Seg/model_saving/{datetime.date.today}'
+    save_path = f'/home/lijl/Documents/Person_Seg/model_saving/{datetime.date.today()}'
     make_sure_path_exists(save_path)
     torch.save(model, os.path.join(save_path, "{}-{:.4f}-{:.4f}.pth".format(epoch, pred, miou)))
 
