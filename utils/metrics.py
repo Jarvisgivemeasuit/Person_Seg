@@ -3,6 +3,29 @@ import numpy as np
 from sklearn.metrics import f1_score as fs
 
 
+class AverageMeter:
+    '''
+    A generic class for averaging.
+    '''
+    def __init__(self):
+        self.count = 0
+        self.sum = 0
+        self.avg = 0
+        self.val = 0
+
+    def reset(self):
+        self.count = 0
+        self.sum = 0
+        self.avg = 0
+        self.val = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
 class PixelAccuracy:
     def __init__(self, eps=1e-7):
         self.num_correct = 0
@@ -12,8 +35,6 @@ class PixelAccuracy:
     def update(self, pred, target):
         pred = torch.argmax(pred, dim=1)
 
-        # self.num_correct += (pred.long() & target.long()).sum().item()
-        # self.num_instance += target.sum().item()
         self.num_correct += (1 - pred.long() ^ target.long()).sum().item()
         self.num_instance += target.numel()
 

@@ -14,29 +14,6 @@ def make_sure_path_exists(path):
     return path
 
 
-class AverageMeter:
-    '''
-    A generic class for averaging.
-    '''
-    def __init__(self):
-        self.count = 0
-        self.sum = 0
-        self.avg = 0
-        self.val = 0
-
-    def reset(self):
-        self.count = 0
-        self.sum = 0
-        self.avg = 0
-        self.val = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-
 def split_params(net):
     '''
     This function separate out the bias of BatchNorm2d from the parameters of the neural network.

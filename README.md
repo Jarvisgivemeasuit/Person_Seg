@@ -33,3 +33,43 @@
 ### model
 
 该目录包含模型训练使用的模型。
+- __init__.py
+
+    模型定义与模型保存。
+
+- Unet
+
+    TODO LIST: 尚未进行训练。
+
+- PSPnet
+
+    - mobilenet_v3.py
+
+        摘自torchvision。
+
+    - pspnet.py
+
+        以mobilenet_v3为backbone的pspnet模型。`parameters size=4.89M`
+
+### utils
+
+该目录包含所有训练超参数、评价指标及后处理等问题。
+- args.py
+
+    设置训练过程中的所有超参数。
+
+- metrics.py
+
+    所有模型训练涉及的评价指标及平均数计算（如单位iter训练时间、loss等）。
+
+- utils.py
+
+    设计weight decay策略等模型参数分离、lr下降策略等。
+
+### main.py
+
+训练过程pipline以及验证集效果可视化。
+
+### inference.py
+
+对训练好的模型进行推理。

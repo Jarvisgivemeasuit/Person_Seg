@@ -80,8 +80,8 @@ class Trainer:
         self.train_metric.pixacc.reset()
         self.train_metric.iou.reset()
 
-        batch_time = AverageMeter()
-        losses = AverageMeter()
+        batch_time = metrics.AverageMeter()
+        losses = metrics.AverageMeter()
         starttime = time.time()
 
         num_train = len(self.train_loader)
@@ -136,8 +136,8 @@ class Trainer:
         self.train_metric.pixacc.reset()
         self.val_metric.iou.reset()
 
-        batch_time = AverageMeter()
-        losses = AverageMeter()
+        batch_time = metrics.AverageMeter()
+        losses = metrics.AverageMeter()
         starttime = time.time()
 
         num_val = len(self.val_loader)
