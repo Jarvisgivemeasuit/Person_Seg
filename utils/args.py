@@ -7,6 +7,7 @@ class Args:
     def __init__(self):
         self.tr_batch_size = 64
         self.vd_batch_size = 64
+        self.test_batch_size = 1
 
         self.num_workers = 4
         self.inplanes = 3
@@ -28,7 +29,8 @@ class Args:
         self.cuda = torch.cuda.is_available()
         self.apex = True
 
-        self.vis_image_dir = '/home/lijl/Documents/Person_Seg/vis_image/'
+        self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
+        self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/results'
         # self.board_dir = 'pspnet'
 
     def get_lr(self, reset_times, epochs, iterations, iters, lr_init, lr_min, warm_up_epoch=0):
@@ -39,4 +41,4 @@ class Args:
             lr_lessen = int((epochs - warm_up_epoch) / reset_times * iterations)
             lr = 0.5 * ((math.cos((iters - warm_step) % lr_lessen / lr_lessen * math.pi)) + 1) * lr_gap  + lr_min
         
-        return lr * 100
+        return lr / lr_init

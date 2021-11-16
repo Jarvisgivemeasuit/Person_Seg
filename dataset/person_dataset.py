@@ -15,21 +15,23 @@ class PersonSeg(Dataset):
     NUM_CLASSES = 2
     
     def __init__(self, mode='train', base_dir=Path.db_root_dir('person')):
-        assert mode in ['train', 'val']
         super().__init__()
 
         self.mode = mode
         self.mean = mean
         self.std = std
 
-        self.jpg_image_dir = os.path.join(base_dir, mode, 'Images')
-        self.jpg_label_dir = os.path.join(base_dir, mode, 'Masks')
-
-        self.array_image_dir = os.path.join(base_dir, mode, 'Images_np')
-        self.array_label_dir = os.path.join(base_dir, mode, 'Masks_np')
+        if mode != 'test':
+            self.jpg_image_dir = os.path.join(base_dir, mode, 'Images')
+            self.jpg_label_dir = os.path.join(base_dir, mode, 'Masks')
+        else:
+            self.jpg_image_dir = os.path.join(base_dir, mode)
 
         self.jpg_data_list = os.listdir(self.jpg_image_dir)
-        self.array_data_list = os.listdir(self.array_image_dir)
+
+            # self.array_image_dir = os.path.join(base_dir, mode, 'Images_np')
+            # self.array_label_dir = os.path.join(base_dir, mode, 'Masks_np')
+            # self.array_data_list = os.listdir(self.array_image_dir)
 
         for data in self.jpg_data_list:
             if data[-3:] != 'jpg':
@@ -39,7 +41,10 @@ class PersonSeg(Dataset):
         return len(self.jpg_data_list)
 
     def __getitem__(self, idx):
-        return self.load_jpg_sample(idx)
+        if self.mode != 'test':
+            return self.load_jpg_sample(idx)
+        else:
+            return self.load_jpg_test(idx)
 
     def load_jpg_sample(self, idx):
         image = cv2.imread(os.path.join(self.jpg_image_dir, self.jpg_data_list[idx]))
@@ -53,7 +58,7 @@ class PersonSeg(Dataset):
         if self.mode == 'train':
             sample = self._train_enhance(sample)
         else:
-            sample = self._test_enhance(sample)
+            sample = self._val_enhance(sample)
 
         sample['image'] = sample['image'].transpose((2, 0, 1))
         sample['file'] = self.jpg_data_list[idx]
@@ -71,12 +76,24 @@ class PersonSeg(Dataset):
         if self.mode == 'train':
             sample = self._train_enhance(sample)
         else:
-            sample = self._test_enhance(sample)
+            sample = self._val_enhance(sample)
 
         sample['image'] = sample['image'].transpose((2, 0, 1))
         sample['file'] = self.array_data_list[idx]
 
         return sample
+
+    def load_jpg_test(self, idx):
+        image = cv2.imread(os.path.join(self.jpg_image_dir, self.jpg_data_list[idx]))
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        sample = {'image': image, 'file': self.jpg_data_list[idx]}
+        sample = self._test_enhance(sample)
+
+        sample['image'] = sample['image'].transpose((2, 0, 1))
+
+        return sample
+
 
     def _train_enhance(self, sample):
         compose = A.Compose([
@@ -95,11 +112,21 @@ class PersonSeg(Dataset):
         ], additional_targets={'image': 'image', 'label': 'mask'})
         return compose(**sample)
 
-    def _test_enhance(self, sample):
+    def _val_enhance(self, sample):
         norm = A.Compose([
             A.CLAHE(p=1),
 
             A.Resize(256, 256, p=1),
             A.Normalize(mean=self.mean, std=self.std, p=1)],
             additional_targets={'image': 'image', 'label': 'mask'})
+        return norm(**sample)
+
+
+    def _test_enhance(self, sample):
+        norm = A.Compose([
+            A.CLAHE(p=1),
+
+            A.Resize(256, 256, p=1),
+            A.Normalize(mean=self.mean, std=self.std, p=1)],
+            additional_targets={'image': 'image'})
         return norm(**sample)

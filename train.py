@@ -1,7 +1,8 @@
 import os
 import time
-import sys
+import datetime
 import numpy as np
+from matplotlib import pyplot as plt
 
 from collections import namedtuple
 from progress.bar import Bar
@@ -21,8 +22,6 @@ import torch.utils.data
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.optim
-import numpy as np 
-import math
 
 
 class Trainer:
@@ -31,6 +30,7 @@ class Trainer:
         self.args = Args
         self.start_epoch, self.epochs = 1, self.args.epochs
         self.best_pred, self.best_iou = 0, 0
+        self.today = datetime.date.today()
 
         train_set, val_set = PersonSeg('train'), PersonSeg('val')
         self.train_loader = DataLoader(train_set, batch_size=self.args.tr_batch_size,
@@ -184,7 +184,7 @@ class Trainer:
                 self.best_pred = self.val_metric.pixacc.get()
             self.best_iou = self.val_metric.iou.get()
 
-            save_model(self.net, epoch, self.best_pred, self.best_iou)
+            save_model(self.net, epoch, self.best_pred, self.best_iou, self.today)
         print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
 
     def get_lr(self):
@@ -198,7 +198,6 @@ class Trainer:
         image_np += self.mean
         image_np *= 255
         image_np = image_np.astype(np.uint8)
-        image_np = image_np[:, :, :, 1:]
 
         # target (B,H,W)
         target = target.cpu().numpy()
@@ -225,7 +224,7 @@ class Trainer:
             plt.subplot(133)
             plt.imshow(output_tmp, vmin=0, vmax=255)
 
-            save_path = os.path.join(self.args.vis_image_dir, f'epoch_{epoch}')
+            save_path = os.path.join(self.args.vis_image_path, f'epoch_{epoch}')
             make_sure_path_exists(save_path)
             plt.savefig(f"{save_path}/{batch_index}-{i}.jpg")
             plt.close('all')
