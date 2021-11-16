@@ -8,13 +8,21 @@
     数据集取自公共数据集COCO中所有包含人的实例分割的样本。该文件主要实现将指定类别图片保存至目标目录以及图片对应的mask制作。
     数据集制作完成后的文件目录如下：
     coco_person
+
     ├── test
+
     │   └── Images
+
     ├── train
+
     │   ├── Images
+
     │   └── Masks
+
     └── val
+
         ├── Images
+        
         └── Masks
 
 - person_dataset.py
