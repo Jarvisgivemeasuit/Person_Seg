@@ -17,7 +17,8 @@ class MobileNetV3(nn.Module):
         super().__init__()
 
         assert depth in ['large', 'small']
-        self.model = mobilenet_v3_small(pretrained=True) if depth == 'small' else mobilenet_v3_large(pretrained=False)
+        self.model = mobilenet_v3_small(pretrained=True) if depth == 'small' \
+                     else mobilenet_v3_large(pretrained=False)
 
         for m in self.model.features[4:].modules():
             if isinstance(m, nn.Conv2d):

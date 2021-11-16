@@ -44,7 +44,7 @@ class PersonSeg(Dataset):
         if self.mode != 'test':
             return self.load_jpg_sample(idx)
         else:
-            return self.load_jpg_test(idx)
+            return self.load_jpg_test_image(idx)
 
     def load_jpg_sample(self, idx):
         image = cv2.imread(os.path.join(self.jpg_image_dir, self.jpg_data_list[idx]))
@@ -83,7 +83,7 @@ class PersonSeg(Dataset):
 
         return sample
 
-    def load_jpg_test(self, idx):
+    def load_jpg_test_image(self, idx):
         image = cv2.imread(os.path.join(self.jpg_image_dir, self.jpg_data_list[idx]))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -93,7 +93,6 @@ class PersonSeg(Dataset):
         sample['image'] = sample['image'].transpose((2, 0, 1))
 
         return sample
-
 
     def _train_enhance(self, sample):
         compose = A.Compose([

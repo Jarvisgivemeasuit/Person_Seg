@@ -13,6 +13,9 @@ NUM_CLASSES = 2
 
 # 统计类别数量占比
 def statistic(data_path):
+    '''
+    Statistics on the percentage of the number of all categories.
+    '''
     data_list = os.listdir(os.path.join(data_path, 'mask'))
     num = len(data_list)
     bar = Bar('counting:', max=num)
@@ -29,30 +32,11 @@ def statistic(data_path):
     return res
 
 
-# 将多类别label转换成前背景两类mask
-def fore_back(path_dict):
-    img_list = os.listdir(path_dict['data_path'])
-    num_imgs = len(img_list)
-    bar = Bar('Saving binary file:', max=num_imgs)
-
-    for i, mask_file in enumerate(img_list):
-        mask = np.load(os.path.join(path_dict['data_path'], mask_file))
-
-        back = (mask == 15).sum()
-        rate = (mask.size - back) / mask.size
-
-        binary = np.ones(mask.shape)
-        binary[np.where(mask == 15)] = 0
-
-        np.save(os.path.join(path_dict['save_path'], mask_file), {'binary_mask': binary, 'rate': rate})
-        
-        bar.suffix = f'{i + 1} / {num_imgs}'
-        bar.next()
-    bar.finish()
-
-
 #  计算所有图片像素的均值并调用std
 def mean_std(path):
+    '''
+    Calculating the mean and standard deviation of a given dataset.
+    '''
     img_list = os.listdir(path)
     pixels_num = 0
     value_sum = [0, 0, 0]
@@ -78,6 +62,9 @@ def mean_std(path):
 
 # 计算所有图片的标准差
 def _std(path, img_list, mean, pixels_num):
+    '''
+    Calculating the standard deviation of a given dataset.
+    '''
     files_num = len(img_list)
     bar = Bar('Calculating std:', max=files_num)
     value_std = [0, 0, 0]

@@ -1,23 +1,23 @@
 import os
 import math
 
-import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.optim.lr_scheduler import _LRScheduler
-from torch.autograd import Variable
-
-
-NUM_CLASSES = 2
 
 
 def make_sure_path_exists(path):
+    '''
+    Determines if a path exists; if it does not exist, creates this path.
+    '''
     if not os.path.exists(path):
         os.makedirs(path)
     return path
 
 
 class AverageMeter:
+    '''
+    A generic class for averaging.
+    '''
     def __init__(self):
         self.count = 0
         self.sum = 0
@@ -38,6 +38,17 @@ class AverageMeter:
 
 
 def split_params(net):
+    '''
+    This function separate out the bias of BatchNorm2d from the parameters of the neural network.
+    The bias of BatchNorm2d can be done without weight decay.
+
+    Args: 
+        net: A neural network.
+
+    Returns: 
+        decay: A list of parameters that need to be penalty.
+        no_decay: A list of parameters that need not to be penalty.
+    '''
     decay, no_decay = [], []
     
     for stage in net.modules():
@@ -51,6 +62,9 @@ def split_params(net):
 
 
 class ResetLR(_LRScheduler):
+    '''
+    A pytorch LRScheduler with warm up strategy and reset LR stratgy.
+    '''
     def __init__(self, optimizer, lr_init, lr_min, warm_up_epoch, reset_times, epochs, iterations):
         super().__init__()
         self.lr_init = lr_init
@@ -73,64 +87,3 @@ class ResetLR(_LRScheduler):
     def _get_closed_form_lr(self):
         return [0.5 * ((math.cos((self.last_epoch - self.warm_up_epoch) / 
                                  (self.epochs - self.warm_up_epoch) * math.pi)) + 1) * self.lr_gap  + self.lr_min]
-
-
-class SoftCrossEntropyLoss(nn.Module):
-
-    def __init__(self, ignore_index=-1, times=1, eps=1e-7, weight=None):
-        super().__init__()
-        self.ignore_index = ignore_index
-        self.times = times
-        self.eps = eps
-        if weight is None:
-            self.weight = weight
-        else:
-            self.weight = weight.cuda()
-
-    def forward(self, pred, target):
-        mask = target != self.ignore_index
-        pred = F.log_softmax(pred, dim=-1)
-        loss = -pred * target
-        loss = loss * mask.float()
-        # print(loss, pred, target, mask)
-        if self.weight is None:
-            return self.times * loss.sum() / (mask.sum() + self.eps)
-        else:
-            return self.times * (self.weight * loss).sum() / (mask.sum() + self.eps)
-
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=2, eps=1e-7, reducation='mean'):
-        super().__init__()
-        self.alpha = Variable(torch.tensor(alpha))
-        self.gamma = gamma
-        self.eps = eps
-        self.reducation = reducation
-
-    def forward(self, pred, target):
-        N = pred.shape[0]
-        C = pred.shape[1]
-        num_pixels = pred.shape[2] * pred.shape[3]
-
-        target_index = target.view(target.shape[0], target.shape[1], target.shape[2], 1)
-        class_mask = torch.zeros([N, pred.shape[2], pred.shape[3], C]).cuda()
-        class_mask = class_mask.scatter_(3, target_index, 1.)
-        class_mask = class_mask.transpose(1, 3)
-        class_mask = class_mask.view(pred.shape)
-
-        logsoft_pred = F.log_softmax(pred, dim=1)
-        soft_pred = F.softmax(pred, dim=1)
-
-        loss = -self.alpha * ((1 - soft_pred)) ** self.gamma * logsoft_pred
-        loss = loss * class_mask
-        loss = loss.sum(1)
-
-        if self.reducation == 'mean':
-            return loss.sum() / (class_mask.sum() + self.eps)
-        else:
-            return loss.sum()
-
-
-if __name__ == '__main__':
-    pass
-    

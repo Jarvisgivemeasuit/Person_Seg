@@ -30,7 +30,9 @@ class Args:
         self.apex = True
 
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
+        self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
         self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/results'
+
         # self.board_dir = 'pspnet'
 
     def get_lr(self, reset_times, epochs, iterations, iters, lr_init, lr_min, warm_up_epoch=0):
