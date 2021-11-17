@@ -25,7 +25,7 @@ class PersonSeg(Dataset):
             self.jpg_image_dir = os.path.join(base_dir, mode, 'Images')
             self.jpg_label_dir = os.path.join(base_dir, mode, 'Masks')
         else:
-            self.jpg_image_dir = os.path.join(base_dir, mode)
+            self.jpg_image_dir = os.path.join(base_dir, mode, 'Images')
 
         self.jpg_data_list = os.listdir(self.jpg_image_dir)
 
@@ -34,8 +34,8 @@ class PersonSeg(Dataset):
             # self.array_data_list = os.listdir(self.array_image_dir)
 
         for data in self.jpg_data_list:
-            if data[-3:] != 'jpg':
-                self._data_list.remove(data)
+            if data[-3:] != 'jpg' and data[-4:] != 'jpeg':
+                self.jpg_data_list.remove(data)
 
     def __len__(self):
         return len(self.jpg_data_list)

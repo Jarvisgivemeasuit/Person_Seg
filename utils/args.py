@@ -16,7 +16,7 @@ class Args:
         self.epochs = 103
 
         self.lr = 0.01
-        self.lr_min = 1e-5
+        self.lr_min = 1e-4
         self.reset_times = 4
         
         self.warm_up_epoch = 3
@@ -31,8 +31,10 @@ class Args:
 
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
         self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
-        self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/results'
+        self.param_path = '/home/lijl/Documents/Person_Seg/model_saving/2021-11-17/98-0.9363-0.7183.pt'
+        self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/Results'
 
+        self.thres = 4000
         # self.board_dir = 'pspnet'
 
     def get_lr(self, reset_times, epochs, iterations, iters, lr_init, lr_min, warm_up_epoch=0):
@@ -41,6 +43,6 @@ class Args:
             lr = lr_gap / warm_step * iters
         else:
             lr_lessen = int((epochs - warm_up_epoch) / reset_times * iterations)
-            lr = 0.5 * ((math.cos((iters - warm_step) % lr_lessen / lr_lessen * math.pi)) + 1) * lr_gap  + lr_min
+            lr = 0.5 * ((math.cos((iters + 1 - warm_step) % lr_lessen / lr_lessen * math.pi)) + 1) * lr_gap  + lr_min
         
         return lr / lr_init

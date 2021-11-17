@@ -1,6 +1,5 @@
 import os
 import torch
-from model.Unet.unet import UNet
 from model.PSPnet.pspnet import PSPNet
 
 
