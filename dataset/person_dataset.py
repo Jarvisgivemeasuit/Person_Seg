@@ -113,8 +113,6 @@ class PersonSeg(Dataset):
 
     def _val_enhance(self, sample):
         norm = A.Compose([
-            A.CLAHE(p=1),
-
             A.Resize(256, 256, p=1),
             A.Normalize(mean=self.mean, std=self.std, p=1)],
             additional_targets={'image': 'image', 'label': 'mask'})
@@ -123,8 +121,6 @@ class PersonSeg(Dataset):
 
     def _test_enhance(self, sample):
         norm = A.Compose([
-            A.CLAHE(p=1),
-
             A.Resize(256, 256, p=1),
             A.Normalize(mean=self.mean, std=self.std, p=1)],
             additional_targets={'image': 'image'})

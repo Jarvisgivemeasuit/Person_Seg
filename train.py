@@ -184,7 +184,7 @@ class Trainer:
             self.best_iou = self.val_metric.iou.get()
 
             save_model(self.net, epoch, self.best_pred, 
-                       self.best_iou, self.model_save_path, self.today)
+                       self.best_iou, self.param_path, self.today)
         print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
 
     def get_lr(self):

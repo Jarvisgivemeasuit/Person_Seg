@@ -116,12 +116,9 @@ if __name__ == '__main__':
     classes_names = ['person']
     datasets_list = ['train2017', 'val2017']
 
-    # trans_samples_to_array(root_save_path, root_save_path, 'train')
-    trans_samples_to_array(root_save_path, root_save_path, 'val')
-
-    # for dataset in datasets_list:
-    #     save_path = os.path.join(root_save_path, f'{dataset[:-4]}')
-    #     annFile = f'instances_{dataset}.json'
+    for dataset in datasets_list:
+        save_path = os.path.join(root_save_path, f'{dataset[:-4]}')
+        annFile = f'instances_{dataset}.json'
  
-    #     get_mask_data(ori_path, save_path, annFile, dataset, classes_names)
-    #     print('Got all the masks of "{}" from {}'.format(classes_names, dataset))
+        get_mask_data(ori_path, save_path, annFile, dataset, classes_names)
+        print('Got all the masks of "{}" from {}'.format(classes_names, dataset))
