@@ -13,7 +13,7 @@ from model.pspnet import *
 
 
 def load_model():
-    params_path = './98-0.9363-0.7183.pt'
+    params_path = './model_params/98-0.9363-0.7183.pt'
     model = PSPNet(2)
 
     model.load_state_dict(torch.load(params_path, map_location=torch.device('cpu')))
@@ -28,7 +28,7 @@ def to_onnx(model, batch_size):
 
     torch.onnx.export(model,               # model being run
                   x,                         # model input (or a tuple for multiple inputs)
-                  "98-0.9363-0.7183.onnx",   # where to save the model (can be a file or file-like object)
+                  "./model_params/98-0.9363-0.7183.onnx",   # where to save the model (can be a file or file-like object)
                   export_params=True,        # store the trained parameter weights inside the model file
                   opset_version=13,          # the ONNX version to export the model to
                   do_constant_folding=True,  # whether to execute constant folding for optimization
@@ -39,7 +39,7 @@ def to_onnx(model, batch_size):
 
 
 def check_onnx_model():
-    params_path = './98-0.9363-0.7183.onnx'
+    params_path = './model_params/98-0.9363-0.7183.onnx'
     onnx_model = onnx.load(params_path)
     onnx.checker.check_model(onnx_model)
     return onnx_model
@@ -57,7 +57,7 @@ def test_enhance(image):
 
 
 def onnx_test(test_sample, torch_out):
-    params_path = './98-0.9363-0.7183.onnx'
+    params_path = './model_params/98-0.9363-0.7183.onnx'
     ort_session = onnxruntime.InferenceSession(params_path)
 
     img = cv2.imread(test_sample)
@@ -74,8 +74,8 @@ def onnx_test(test_sample, torch_out):
 
     output_tmp = np.zeros(ort_outs[0].shape)
     output_tmp[ort_outs[0] == 1] = 255
+    cv2.imwrite('./samples/onnx_out.jpg', output_tmp)
 
-    cv2.imwrite('./onnx_out.jpg', output_tmp)
     # compare ONNX Runtime and PyTorch results
     np.testing.assert_allclose(torch_out_img, output_tmp, rtol=1e-03, atol=1e-05)
 
@@ -87,10 +87,7 @@ if __name__ == '__main__':
 
     check_onnx_model()
 
-    test_path = '/home/lijl/Datasets/segmentation/coco_person/test'
-    img_name = 'IMG_8099.jpeg'
-
-    test_sample = os.path.join(test_path, 'Images', img_name)
-    torch_out = os.path.join(test_path, 'Results', img_name)
+    test_sample = './samples/test_sample.jpeg'
+    torch_out = './samples/torch_out.jpeg'
 
     onnx_test(test_sample, torch_out)
