@@ -1,6 +1,6 @@
 import os
 import torch
-from model.PSPnet.pspnet import PSPNet
+from model.pspnet import PSPNet
 
 
 def get_model(model_name, num_classes):
