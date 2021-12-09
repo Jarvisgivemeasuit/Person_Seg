@@ -1,11 +1,14 @@
 import os
 import torch
 from model.pspnet import PSPNet
+from model.unet import UNet
 
 
 def get_model(model_name, num_classes):
     if model_name == 'pspnet':
         return PSPNet(num_classes)
+    elif model_name == 'unet':
+        return UNet(num_classes)
 
 
 def save_model(model, epoch, pred, miou, save_path, today):

@@ -1,6 +1,7 @@
 vis_image
 model_saving
-.ipynb_checkpoint
+MNN
+.ipynb_checkpoints
 
 *.ipynb
 

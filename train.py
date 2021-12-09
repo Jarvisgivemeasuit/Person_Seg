@@ -40,11 +40,12 @@ class Trainer:
         self.mean, self.std = train_set.mean, train_set.std
 
         self.net = get_model(self.args.model_name, self.num_classes)
-        params, _ = split_params(self.net)
-        self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
-                                         momentum=0.9, weight_decay=self.args.weight_decay)
-        # self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr,
+
+        # params, _ = split_params(self.net)
+        # self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
         #                                  momentum=0.9, weight_decay=self.args.weight_decay)
+        self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr,
+                                         momentum=0.9, weight_decay=self.args.weight_decay)
         self.criterion = nn.CrossEntropyLoss()
 
         if self.args.cuda:

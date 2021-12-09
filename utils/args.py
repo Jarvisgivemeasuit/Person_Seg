@@ -12,7 +12,7 @@ class Args:
         self.num_workers = 4
         self.inplanes = 3
 
-        self.model_name = 'pspnet'
+        self.model_name = 'unet'
         self.epochs = 103
 
         self.lr = 0.01
