@@ -30,7 +30,7 @@ class Trainer:
         self.args = Args
         self.start_epoch, self.epochs = 1, self.args.epochs
         self.best_pred, self.best_iou = 0, 0
-        self.today = datetime.date.today()
+        self.today = str(datetime.date.today())
 
         train_set, val_set = PersonSeg('train'), PersonSeg('val')
         self.train_loader = DataLoader(train_set, batch_size=self.args.tr_batch_size,
