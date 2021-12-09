@@ -39,7 +39,7 @@ class Up(nn.Module):
     def __init__(self, d_inplanes, d_planes, last_cat=False):
         super(Up, self).__init__()
         self.last_cat = last_cat
-        self.up = nn.Upsample(scale_factor=2, mode="bilinear")
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
         self.conv = Double_conv(d_inplanes, d_planes)
 
     def forward(self, x1, x2):

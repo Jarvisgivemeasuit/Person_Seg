@@ -68,7 +68,9 @@ class Trainer:
 
             self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=self.lr)
         else:
-            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.args.epochs * len(self.train_loader), eta_min=1e-5)
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, 
+                                                                        T_max=self.args.epochs * len(self.train_loader), 
+                                                                        eta_min=1e-5)
 
         self.Metric = namedtuple('Metric', 'pixacc iou')
         self.train_metric = self.Metric(pixacc=metrics.PixelAccuracy(),
@@ -185,7 +187,7 @@ class Trainer:
             self.best_iou = self.val_metric.iou.get()
 
             save_model(self.net, epoch, self.best_pred, 
-                       self.best_iou, self.param_path, self.today)
+                       self.best_iou, self.args.model_save_path, self.today)
         print("-----best acc:{:.4f}, best iou:{:.4f}-----".format(self.best_pred, self.best_iou))
 
     def get_lr(self):
