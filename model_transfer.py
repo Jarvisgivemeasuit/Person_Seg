@@ -12,10 +12,7 @@ import cv2
 import albumentations as A
 
 from model.pspnet import *
-import MNN
-from MNN.Net import Net
-from MNN.TensorDescribe import TensorDescribe
-from MNN.OpType import OpType
+from model.unet import *
 
 
 # torch.trace
@@ -29,14 +26,16 @@ def trace_model(model):
     model_script.save('./model_params/model_script.pt')
 
 
-def load_model(model_name, mode='torch'):
+def load_model(model_name, params_name, mode='torch'):
     assert mode in ['torch', 'script']
+    params_path = f'./{model_name}_params/{params_name}.pt'
 
-    params_path = f'./model_params/{model_name}.pt'
     if mode == 'torch':
-        model = PSPNet(2)
+        if model_name == 'pspnet':
+            model = PSPNet(2)
+        elif model_name == 'unet':
+            model = UNet(2)
         model.load_state_dict(torch.load(params_path, map_location=torch.device('cpu')))
-
     else:
         model = torch.jit.load(params_path)
 
@@ -44,33 +43,23 @@ def load_model(model_name, mode='torch'):
 
 
 # transfer to ONNX
-def to_onnx(model, model_name):
+def to_onnx(model, model_name, params_name):
     model.eval()
 
     x = torch.randn(1, 3, 256, 256, requires_grad=True)
     torch.onnx.export(model,               # model being run
                   x,                         # model input (or a tuple for multiple inputs)
-                  f"./model_params/{model_name}.onnx",   # where to save the model (can be a file or file-like object)
+                  f"./{model_name}_params/{params_name}.onnx",   # where to save the model (can be a file or file-like object)
                   export_params=True,        # store the trained parameter weights inside the model file
-                  opset_version=11,          # the ONNX version to export the model to
+                  opset_version=12,          # the ONNX version to export the model to
                   do_constant_folding=True,  # whether to execute constant folding for optimization
                   input_names = ['input'],   # the model's input names
                   output_names = ['output'], # the model's output names
                   )
 
 
-# modify the shape of onnx model input.
-def modify_onnx_input_shape(model_name):
-    params_path = f'./model_params/{model_name}.onnx'
-    model = onnx.load(params_path)       
-                          
-    dim_proto0 = model.graph.input[0].type.tensor_type.shape.dim[0]
-    dim_proto0.dim_param = '1'
-    onnx.save(model, params_path)
-
-
-def check_onnx_model(model_name):
-    params_path = f'./model_params/{model_name}.onnx'
+def check_onnx_model(model_name, params_name):
+    params_path = f'./{model_name}_params/{params_name}.onnx'
     onnx_model = onnx.load(params_path)
     onnx.checker.check_model(onnx_model)
     return onnx_model
@@ -87,8 +76,8 @@ def test_enhance(image):
     return norm(image=image)['image']
 
 
-def onnx_test(model_name, test_sample, torch_out):
-    params_path = f'./model_params/{model_name}.onnx'
+def onnx_test(model_name, params_name, test_sample, torch_out):
+    params_path = f'./{model_name}_params/{params_name}.onnx'
     ort_session = onnxruntime.InferenceSession(params_path)
 
     img = cv2.imread(test_sample)
@@ -112,20 +101,20 @@ def onnx_test(model_name, test_sample, torch_out):
 
 
 if __name__ == '__main__':
-    model_name, mode = '98-0.9363-0.7183', 'torch'
-    model = load_model(model_name, mode)
+    model_name, params_name, mode = 'unet', '99-0.9371-0.7160', 'torch'
+    model = load_model(model_name, params_name, mode)
     trace_model(model)
 
     model_name, mode = 'model_script', 'script'
-    model = load_model(model_name, mode)
+    model = load_model(model_name, params_name, mode)
 
-    to_onnx(model, model_name)
+    to_onnx(model, model_name, params_name)
 
-    check_onnx_model(model_name)
+    check_onnx_model(model_name, params_name)
 
     test_sample = './samples/test_sample.jpeg'
     torch_out = './samples/torch_out.jpeg'
-    onnx_test(model_name, test_sample, torch_out)
+    onnx_test(model_name, params_name, test_sample, torch_out)
 
 
 
