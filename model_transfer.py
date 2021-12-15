@@ -16,14 +16,14 @@ from model.unet import *
 
 
 # torch.trace
-def trace_model(model):
+def trace_model(model, model_name):
     model.eval()
     # trace
     model_trace = torch.jit.trace(model, torch.rand(1, 3, 256, 256))
-    model_trace.save('./model_params/model_trace.pt')
+    model_trace.save(f'./{model_name}_params/model_trace.pt')
     # script
     model_script = torch.jit.script(model)
-    model_script.save('./model_params/model_script.pt')
+    model_script.save(f'./{model_name}_params/model_script.pt')
 
 
 def load_model(model_name, params_name, mode='torch'):
@@ -51,7 +51,7 @@ def to_onnx(model, model_name, params_name):
                   x,                         # model input (or a tuple for multiple inputs)
                   f"./{model_name}_params/{params_name}.onnx",   # where to save the model (can be a file or file-like object)
                   export_params=True,        # store the trained parameter weights inside the model file
-                  opset_version=12,          # the ONNX version to export the model to
+                  opset_version=11,          # the ONNX version to export the model to
                   do_constant_folding=True,  # whether to execute constant folding for optimization
                   input_names = ['input'],   # the model's input names
                   output_names = ['output'], # the model's output names
@@ -101,11 +101,11 @@ def onnx_test(model_name, params_name, test_sample, torch_out):
 
 
 if __name__ == '__main__':
-    model_name, params_name, mode = 'unet', '99-0.9371-0.7160', 'torch'
-    model = load_model(model_name, params_name, mode)
-    trace_model(model)
+    model_name, params_name, mode = 'unet', '98-0.9374-0.7128', 'torch'
+    # model = load_model(model_name, params_name, mode)
+    # trace_model(model, model_name)
 
-    model_name, mode = 'model_script', 'script'
+    # params_name, mode = 'model_script', 'script'
     model = load_model(model_name, params_name, mode)
 
     to_onnx(model, model_name, params_name)

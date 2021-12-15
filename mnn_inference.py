@@ -6,8 +6,8 @@ import MNN
 import MNN.expr as F
 
 
-# model_path = './model_params/98-0.9363-0.7183.mnn'
-model_path = './pspnet_params/model_script.mnn'
+model_path = './unet_params/98-0.9374-0.7128.mnn'
+# model_path = './pspnet_params/model_script.mnn'
 image_path = './samples/test_sample.jpeg'
 output_save_path = './samples/mnn_out.jpeg'
 mean = [0.46388339, 0.44664543, 0.41852783]
