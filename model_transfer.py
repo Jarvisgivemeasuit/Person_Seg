@@ -1,5 +1,6 @@
 import torch
 from torch import onnx
+from torch.utils import mobile_optimizer
 
 import onnx
 import onnxruntime
@@ -24,6 +25,20 @@ def trace_model(model, model_name):
     # script
     model_script = torch.jit.script(model)
     model_script.save(f'./{model_name}_params/model_script.pt')
+
+
+def torch_trace(model, model_name):
+    model.eval()
+    # trace
+    model_trace = torch.jit.trace(model, torch.rand(1, 3, 256, 256))
+    model_trace.save(f'./{model_name}_params/model_trace.pt')
+    # script
+    model_script = torch.jit.script(model)
+    model_script.save(f'./{model_name}_params/model_script.pt')
+
+    optimized_script = mobile_optimizer.optimize_for_mobile(model_script)
+    optimized_script.save(f'./{model_name}_params/optimized_script.pt')
+    optimized_script._save_for_lite_interpreter(f'./{model_name}_params/lite_script.pt')
 
 
 def load_model(model_name, params_name, mode='torch'):
@@ -101,20 +116,21 @@ def onnx_test(model_name, params_name, test_sample, torch_out):
 
 
 if __name__ == '__main__':
-    model_name, params_name, mode = 'unet', '98-0.9374-0.7128', 'torch'
-    # model = load_model(model_name, params_name, mode)
-    # trace_model(model, model_name)
+    # model_name, params_name, mode = 'unet', '98-0.9374-0.7128', 'torch'
+    model_name, params_name, mode = 'pspnet', '98-0.9363-0.7183', 'torch'
+    model = load_model(model_name, params_name, mode)
+    torch_trace(model, model_name)
 
     # params_name, mode = 'model_script', 'script'
-    model = load_model(model_name, params_name, mode)
+    # model = load_model(model_name, params_name, mode)
 
-    to_onnx(model, model_name, params_name)
+    # to_onnx(model, model_name, params_name)
 
-    check_onnx_model(model_name, params_name)
+    # check_onnx_model(model_name, params_name)
 
-    test_sample = './samples/test_sample.jpeg'
-    torch_out = './samples/torch_out.jpeg'
-    onnx_test(model_name, params_name, test_sample, torch_out)
+    # test_sample = './samples/test_sample.jpeg'
+    # torch_out = './samples/torch_out.jpeg'
+    # onnx_test(model_name, params_name, test_sample, torch_out)
 
 
 
