@@ -39,7 +39,7 @@ class Trainer:
                                      shuffle=False, num_workers=self.args.num_workers)
         self.mean, self.std = train_set.mean, train_set.std
 
-        self.net = get_model(self.args.model_name, self.num_classes)
+        self.net = get_model(self.args.backbone, self.args.model_name, self.num_classes)
 
         # params, _ = split_params(self.net)
         # self.optimizer = torch.optim.SGD(params, lr=self.args.lr,

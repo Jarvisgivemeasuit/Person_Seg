@@ -7,6 +7,8 @@ from thop import profile
 from thop import clever_format
 
 from torchvision.models.mobilenetv3 import *
+from torchvision.models.mobilenetv2 import * 
+from .backbone import *
 
 
 NUM_CLASSES = 2
@@ -69,14 +71,15 @@ class Double_conv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, backbone, num_classes):
         super().__init__()
         self.num_classes = num_classes
-        self.backbone = MobileNetV3()
+        self.backbone = get_backbone(backbone, get_all=True)
+        self.out_channels = self.backbone.out_channels
 
-        self.up1 = Up(576+24, 16)
-        self.up2 = Up(16+16, 16)
-        self.up3 = Up(16+16, 16)
+        self.up1 = Up(self.out_channels[3] + self.out_channels[2], 16)
+        self.up2 = Up(self.out_channels[1] + 16, 16)
+        self.up3 = Up(self.out_channels[0] + 16, 16)
         self.up4 = Up(16+3, num_classes)
 
     def forward(self, x):
@@ -89,7 +92,7 @@ class UNet(nn.Module):
         return x
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-# net = UNet(2).cuda()
+# net = UNet('resnet', 2).cuda()
 
 # summary(net.cuda(), (3, 256, 256))
 # inputs = torch.randn(1, 3, 256, 256).cuda()

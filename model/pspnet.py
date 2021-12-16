@@ -7,6 +7,7 @@ from thop import profile
 from thop import clever_format
 
 from torchvision.models.mobilenetv3 import *
+from .backbone import *
 
 
 NUM_CLASSES = 2
@@ -27,6 +28,7 @@ class MobileNetV3(nn.Module):
     def forward(self, x):
         out = self.model(x)
         return out
+
 
 class PPM(nn.Module):
     def __init__(self, inplanes):

@@ -1,6 +1,8 @@
 import os
 import cv2
 import numpy as np
+
+from shutil import copy
 from progress.bar import Bar
 
 from .path import Path
@@ -78,11 +80,29 @@ def _std(path, img_list, mean, pixels_num):
     return np.sqrt(value_std / pixels_num)
 
 
+def get_some_samples(data_path, save_path, num_images):
+    img_path = os.path.join(data_path, 'Images')
+    label_path = os.path.join(data_path, 'Masks')
+    image_list = os.listdir(img_path)
+
+    bar = Bar('Get some samples:', max=num_images)
+
+    for i in range(num_images):
+        name = image_list[i]
+        copy(os.path.join(img_path, name), os.path.join(save_path, 'Images', name))
+        copy(os.path.join(label_path, name), os.path.join(save_path, 'Masks', name))
+        bar.suffix = f'{i + 1} / {num_images}'
+        bar.next()
+    bar.finish()
+
 
 if __name__ == '__main__':
-    data_path = os.path.join(Path.db_root_dir('person'),'train', 'Images')
-    mean, std = mean_std(data_path)
-    print('mean = ', mean, '\t', 'std = ', std)
+    data_path = os.path.join(Path.db_root_dir('person'),'train')
+    save_path = '/home/lijl/Datasets/segmentation/person_samples'
+
+    # get_some_samples(data_path, save_path, 1000)
+    # mean, std = mean_std(data_path)
+    # print('mean = ', mean, '\t', 'std = ', std)
 
     # dis_path = os.path.join(paths_dict['train_split_256'], 'mask')
     # distributing(dis_path)

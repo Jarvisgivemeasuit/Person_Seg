@@ -5,13 +5,14 @@ import math
 
 class Args:
     def __init__(self):
-        self.tr_batch_size = 64
+        self.tr_batch_size = 128
         self.vd_batch_size = 64
         self.test_batch_size = 1
 
         self.num_workers = 4
         self.inplanes = 3
 
+        self.backbone = 'mobilenetv2'
         self.model_name = 'unet'
         self.epochs = 103
 
