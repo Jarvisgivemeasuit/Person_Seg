@@ -30,7 +30,7 @@ class Tester:
                                        shuffle=True, num_workers=self.args.num_workers)
         self.mean, self.std = test_set.mean, test_set.std
 
-        self.net = get_model(self.args.model_name, self.num_classes)
+        self.net = get_model(self.args.backbone, self.args.model_name, self.num_classes)
         self.net.load_state_dict(torch.load(self.args.param_path))
 
         if self.args.cuda:

@@ -12,8 +12,8 @@ class Args:
         self.num_workers = 4
         self.inplanes = 3
 
-        self.backbone = 'mobilenetv2'
-        self.model_name = 'unet'
+        self.backbone = 'mobilenetv3'
+        self.model_name = 'pspnet'
         self.epochs = 103
 
         self.lr = 0.01
@@ -32,7 +32,7 @@ class Args:
 
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
         self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
-        self.param_path = '/home/lijl/Documents/Person_Seg/model_saving/2021-11-17/98-0.9363-0.7183.pt'
+        self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/98-0.9363-0.7183.pt'
         self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/Results'
 
         self.thres = 4000

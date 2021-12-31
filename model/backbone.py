@@ -112,7 +112,7 @@ def get_backbone(model_name, get_all):
     if model_name == 'mobilenetv2':
         model = MobileNetV2(get_all)
     elif model_name == 'mobilenetv3':
-        model = MobileNetV3(get_all)
+        model = MobileNetV3(get_all=get_all)
     elif model_name == 'resnet':
         model = ResNet(get_all)
 
