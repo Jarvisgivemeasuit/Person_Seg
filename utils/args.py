@@ -30,6 +30,7 @@ class Args:
         self.cuda = torch.cuda.is_available()
         self.apex = True
 
+        self.model_pretrain = True
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
         self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
         self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/98-0.9363-0.7183.pt'

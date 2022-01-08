@@ -8,7 +8,6 @@ from collections import namedtuple
 from progress.bar import Bar
 from apex import amp
 from PIL import Image
-from tensorboardX import SummaryWriter
 
 import utils.metrics as metrics
 from utils.args import Args
