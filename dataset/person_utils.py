@@ -1,11 +1,12 @@
 import os
 import cv2
+import random
 import numpy as np
 
 from shutil import copy
 from progress.bar import Bar
 
-from .path import Path
+from path import Path
 
 
 mean = [0.46388339, 0.44664543, 0.41852783]
@@ -96,11 +97,53 @@ def get_some_samples(data_path, save_path, num_images):
     bar.finish()
 
 
-if __name__ == '__main__':
-    data_path = os.path.join(Path.db_root_dir('person'),'train')
-    save_path = '/home/lijl/Datasets/segmentation/person_samples'
+def load_subpaths(dataset_path):
+    img_path = os.path.join(dataset_path, 'Images')
+    mask_path = os.path.join(dataset_path, 'Masks')
+    return img_path, mask_path
 
-    # get_some_samples(data_path, save_path, 1000)
+
+def split_dataset(dataset_path, train_path, valid_path, valid_ratio):
+    source_img_path, source_mask_path = load_subpaths(dataset_path)
+    train_img_path, train_mask_path = load_subpaths(train_path)
+    valid_img_path, valid_mask_path = load_subpaths(valid_path)
+
+    file_list = os.listdir(source_img_path)
+    total = len(file_list)
+    offset = int(total * valid_ratio)
+
+    if total == 0 or offset < 1:
+        return [], file_list
+    random.shuffle(file_list)
+
+    valid_list, train_list = file_list[:offset], file_list[offset:]
+    bar = Bar('Generating validset: ', max=offset)
+    for i, img_file in enumerate(valid_list):
+        copy(os.path.join(source_img_path, img_file), os.path.join(valid_img_path, img_file))
+        copy(os.path.join(source_mask_path, img_file), os.path.join(valid_mask_path, img_file))
+        bar.suffix = f'{i + 1} / {offset}'
+        bar.next()
+    bar.finish()
+
+    bar = Bar('Generating trainset: ', max=total - offset)
+    for i, img_file in enumerate(train_list):
+        copy(os.path.join(source_img_path, img_file), os.path.join(train_img_path, img_file))
+        copy(os.path.join(source_mask_path, img_file), os.path.join(train_mask_path, img_file))
+        bar.suffix = f'{i + 1} / {total - offset}'
+        bar.next()
+    bar.finish()
+
+
+if __name__ == '__main__':
+    # data_path = Path.db_root_dir('medi')
+    # train_path = os.path.join(Path.db_root_dir('finetune'), 'train')
+    # valid_path = os.path.join(Path.db_root_dir('finetune'), 'val')
+
+    # split_dataset(data_path, train_path, valid_path, 0.1)
+    mode, num_images = 'val', 500
+    data_path = os.path.join(Path.db_root_dir('person'), mode)
+    save_path = os.path.join(Path.db_root_dir('finetune'), mode)
+    get_some_samples(data_path, save_path, num_images)
     # mean, std = mean_std(data_path)
     # print('mean = ', mean, '\t', 'std = ', std)
 
