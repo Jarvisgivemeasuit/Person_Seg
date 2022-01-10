@@ -1,6 +1,7 @@
 vis_image
 pspnet_params
 unet_params
+model_saving
 MNN
 .ipynb_checkpoints
 

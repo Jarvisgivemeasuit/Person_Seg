@@ -6,32 +6,23 @@ import numpy as np
 from shutil import copy
 from progress.bar import Bar
 
-from path import Path
+from .path import Path
 
 
-mean = [0.46388339, 0.44664543, 0.41852783]
-std = [0.28203478, 0.27698355, 0.29013959]
+# COCO
+# mean = [0.46388339, 0.44664543, 0.41852783]
+# std = [0.28203478, 0.27698355, 0.29013959]
+
+# Finetune
+mean = [0.468557, 0.45213289, 0.42389801]
+std = [0.2804792, 0.27625015, 0.28853614]
 NUM_CLASSES = 2
 
 
-def statistic(data_path):
-    '''
-    Statistics on the percentage of the number of all categories.
-    '''
-    data_list = os.listdir(os.path.join(data_path, 'mask'))
-    num = len(data_list)
-    bar = Bar('counting:', max=num)
-    res = np.zeros(16)
-    for idx, data_file in enumerate(data_list):
-        mask = np.load(os.path.join(data_path, 'mask', data_file))
-        for i in range(16):
-            count = (mask == i).sum()
-            res[i] += count
-            
-        bar.suffix = '{} / {}'.format(idx, num)
-        bar.next()
-    bar.finish()
-    return res
+def make_sure_path_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
 
 
 def mean_std(path):
@@ -100,6 +91,9 @@ def get_some_samples(data_path, save_path, num_images):
 def load_subpaths(dataset_path):
     img_path = os.path.join(dataset_path, 'Images')
     mask_path = os.path.join(dataset_path, 'Masks')
+
+    make_sure_path_exists(img_path)
+    make_sure_path_exists(mask_path)
     return img_path, mask_path
 
 
@@ -139,13 +133,14 @@ if __name__ == '__main__':
     # train_path = os.path.join(Path.db_root_dir('finetune'), 'train')
     # valid_path = os.path.join(Path.db_root_dir('finetune'), 'val')
 
-    # split_dataset(data_path, train_path, valid_path, 0.1)
-    mode, num_images = 'val', 500
+    # split_dataset(data_path, train_path, valid_path, 0.2)
+
+
+    mode, num_images = 'train', 1000
     data_path = os.path.join(Path.db_root_dir('person'), mode)
     save_path = os.path.join(Path.db_root_dir('finetune'), mode)
     get_some_samples(data_path, save_path, num_images)
+
+    # data_path = os.path.join(Path.db_root_dir('finetune'), 'train', 'Images')
     # mean, std = mean_std(data_path)
     # print('mean = ', mean, '\t', 'std = ', std)
-
-    # dis_path = os.path.join(paths_dict['train_split_256'], 'mask')
-    # distributing(dis_path)

@@ -14,6 +14,7 @@ from utils.args import Args
 from utils.utils import *
 from model import get_model, save_model
 from dataset.person_dataset import PersonSeg
+from dataset.path import Path
 
 import torch
 from torch import nn
@@ -31,9 +32,11 @@ class Trainer:
         self.best_pred, self.best_iou = 0, 0
         self.today = str(datetime.date.today())
 
-        train_set, val_set = PersonSeg('train'), PersonSeg('val')
+        train_set = PersonSeg('train', Path.db_root_dir('finetune'))
+        val_set = PersonSeg('', Path.db_root_dir('medi'))
+
         self.train_loader = DataLoader(train_set, batch_size=self.args.tr_batch_size,
-                                       shuffle=True, num_workers=self.args.num_workers)
+                                       shuffle=True, drop_last=True, num_workers=self.args.num_workers)
         self.val_loader = DataLoader(val_set, batch_size=self.args.vd_batch_size,
                                      shuffle=False, num_workers=self.args.num_workers)
         self.mean, self.std = train_set.mean, train_set.std
@@ -41,9 +44,7 @@ class Trainer:
         self.net = get_model(self.args.backbone, self.args.model_name, self.num_classes)
         if self.args.model_pretrain:
             self.net.load_state_dict(torch.load(self.args.param_path))
-        # params, _ = split_params(self.net)
-        # self.optimizer = torch.optim.SGD(params, lr=self.args.lr,
-        #                                  momentum=0.9, weight_decay=self.args.weight_decay)
+
         self.optimizer = torch.optim.SGD(self.net.parameters(), lr=self.args.lr,
                                          momentum=0.9, weight_decay=self.args.weight_decay)
         self.criterion = nn.CrossEntropyLoss()

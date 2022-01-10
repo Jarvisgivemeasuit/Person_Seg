@@ -117,20 +117,19 @@ def onnx_test(model_name, params_name, test_sample, torch_out):
 
 if __name__ == '__main__':
     # model_name, params_name, mode = 'unet', '98-0.9374-0.7128', 'torch'
-    model_name, params_name, mode = 'pspnet', '98-0.9363-0.7183', 'torch'
+    model_name, params_name, mode = 'pspnet', 'finetuning', 'torch'
     model = load_model(model_name, params_name, mode)
-    torch_trace(model, model_name)
+    # torch_trace(model, model_name)
 
     # params_name, mode = 'model_script', 'script'
     # model = load_model(model_name, params_name, mode)
+    to_onnx(model, model_name, params_name)
 
-    # to_onnx(model, model_name, params_name)
+    check_onnx_model(model_name, params_name)
 
-    # check_onnx_model(model_name, params_name)
-
-    # test_sample = './samples/test_sample.jpeg'
-    # torch_out = './samples/torch_out.jpeg'
-    # onnx_test(model_name, params_name, test_sample, torch_out)
+    test_sample = './samples/test_sample.jpeg'
+    torch_out = './samples/torch_out.jpeg'
+    onnx_test(model_name, params_name, test_sample, torch_out)
 
 
 

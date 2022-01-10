@@ -5,7 +5,7 @@ import math
 
 class Args:
     def __init__(self):
-        self.tr_batch_size = 128
+        self.tr_batch_size = 32
         self.vd_batch_size = 64
         self.test_batch_size = 1
 
@@ -14,18 +14,18 @@ class Args:
 
         self.backbone = 'mobilenetv3'
         self.model_name = 'pspnet'
-        self.epochs = 103
+        self.epochs = 50
 
-        self.lr = 0.01
-        self.lr_min = 1e-4
-        self.reset_times = 4
+        self.lr = 1e-3
+        self.lr_min = 1e-5
+        self.reset_times = 0
         
-        self.warm_up_epoch = 3
+        self.warm_up_epoch = 0
         self.weight_decay = 5e-5
         self.no_val = False
 
         self.gpu_ids = [0, 1, 2, 3]
-        self.gpu_id = '1'
+        self.gpu_id = '2'
         os.environ['CUDA_VISIBLE_DEVICES'] = self.gpu_id
         self.cuda = torch.cuda.is_available()
         self.apex = True
@@ -33,11 +33,12 @@ class Args:
         self.model_pretrain = True
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
         self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
-        self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/98-0.9363-0.7183.pt'
-        self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/Results'
+        self.param_path = '/home/lijl/Documents/Person_Seg/model_saving/2022-01-10/50-0.9907-0.7359.pt'
+        # self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/98-0.9363-0.7183.pt'
+        # self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/Results'
+        self.test_results_path = '/home/lijl/Datasets/segmentation/medical_room/Results'
 
         self.thres = 4000
-        # self.board_dir = 'pspnet'
 
     def get_lr(self, reset_times, epochs, iterations, iters, lr_init, lr_min, warm_up_epoch=0):
         warm_step, lr_gap = iterations * warm_up_epoch, lr_init - lr_min
