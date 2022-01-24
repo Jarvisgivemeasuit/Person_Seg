@@ -116,8 +116,7 @@ def onnx_test(model_name, params_name, test_sample, torch_out):
 
 
 if __name__ == '__main__':
-    # model_name, params_name, mode = 'unet', '98-0.9374-0.7128', 'torch'
-    model_name, params_name, mode = 'pspnet', 'finetuning', 'torch'
+    model_name, params_name, mode = 'pspnet', '50-0.9919-0.7523', 'torch'
     model = load_model(model_name, params_name, mode)
     # torch_trace(model, model_name)
 

@@ -33,7 +33,7 @@ class Args:
         self.model_pretrain = True
         self.vis_image_path = '/home/lijl/Documents/Person_Seg/vis_image/'
         self.model_save_path = '/home/lijl/Documents/Person_Seg/model_saving/'
-        self.param_path = '/home/lijl/Documents/Person_Seg/model_saving/2022-01-10/50-0.9907-0.7359.pt'
+        self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/48-0.9926-0.7715.pt'
         # self.param_path = '/home/lijl/Documents/Person_Seg/pspnet_params/98-0.9363-0.7183.pt'
         # self.test_results_path = '/home/lijl/Datasets/segmentation/coco_person/test/Results'
         self.test_results_path = '/home/lijl/Datasets/segmentation/medical_room/Results'
