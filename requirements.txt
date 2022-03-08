@@ -3,7 +3,7 @@ apex==0.9.10dev
 flatbuffers==2.0
 joblib==1.1.0
 matplotlib==3.4.3
-numpy==1.19.2
+numpy==1.21.0
 onnx==1.10.2
 onnxruntime==1.9.0
 opencv_python==4.5.3.56
