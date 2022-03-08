@@ -43,10 +43,6 @@
 
     模型定义与模型保存。
 
-- Unet
-
-    TODO LIST: 尚未进行训练。
-
 - PSPnet
 
     - mobilenet_v3.py
